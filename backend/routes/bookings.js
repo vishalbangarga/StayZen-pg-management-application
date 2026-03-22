@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
-const { requestBooking, getOwnerBookings, updateBookingStatus } = require('../controllers/bookingController');
+const { requestBooking, getOwnerBookings, updateBookingStatus, getMyBookings } = require('../controllers/bookingController');
 
 // Visitors (Logged-in) can request bookings
 router.post('/request', verifyToken, requestBooking);
+router.get('/my-bookings', verifyToken, getMyBookings);
 
 // Owners can see bookings for their PGs
 router.get('/owner', verifyToken, authorizeRoles('owner'), getOwnerBookings);

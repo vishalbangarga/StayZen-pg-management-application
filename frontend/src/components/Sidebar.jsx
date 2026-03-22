@@ -13,7 +13,7 @@ import {
   Calendar
 } from 'lucide-react';
 
-const Sidebar = ({ role }) => {
+const Sidebar = ({ role, isOpen }) => {
   const ownerLinks = [
     { name: 'Dashboard', path: '/owner-dashboard', icon: <BarChart3 size={20} /> },
     { name: 'My PGs', path: '/owner-dashboard/pgs', icon: <Home size={20} /> },
@@ -26,6 +26,7 @@ const Sidebar = ({ role }) => {
   const tenantLinks = [
     { name: 'Dashboard', path: '/tenant-dashboard', icon: <BarChart3 size={20} /> },
     { name: 'My Room', path: '/tenant-dashboard/room', icon: <Bed size={20} /> },
+    { name: 'My Bookings', path: '/tenant-dashboard/bookings', icon: <Calendar size={20} /> },
     { name: 'Payments', path: '/tenant-dashboard/payments', icon: <CreditCard size={20} /> },
     { name: 'Food Menu', path: '/tenant-dashboard/menu', icon: <MenuIcon size={20} /> },
     { name: 'Complaints', path: '/tenant-dashboard/complaints', icon: <MessageSquare size={20} /> },
@@ -34,7 +35,7 @@ const Sidebar = ({ role }) => {
   const links = role === 'owner' ? ownerLinks : tenantLinks;
 
   return (
-    <aside style={{
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`} style={{
       width: '260px',
       height: 'calc(100vh - 64px)',
       background: 'var(--bg-card)',
@@ -46,6 +47,7 @@ const Sidebar = ({ role }) => {
       position: 'fixed',
       left: 0,
       top: '64px',
+      transition: 'transform 0.3s ease',
     }}>
       {links.map((link) => (
         <NavLink

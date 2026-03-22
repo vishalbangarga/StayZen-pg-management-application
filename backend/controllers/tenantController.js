@@ -43,18 +43,104 @@ const assignTenant = async (req, res) => {
 const getTenantsByPG = async (req, res) => {
   try {
     const { pg_id } = req.params;
-    // This requires a join-like query. In Firestore, we might need to query rooms first.
     const roomsSnapshot = await db.collection('rooms').where('pg_id', '==', pg_id).get();
     const roomIds = roomsSnapshot.docs.map(doc => doc.id);
 
     if (roomIds.length === 0) return res.json([]);
 
-    const tenantsSnapshot = await db.collection('tenants').where('room_id', 'in', roomIds.limit(10)).get();
-    const tenants = tenantsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const tenants = [];
+    for (const doc of tenantsSnapshot.docs) {
+      const tData = doc.data();
+      const [userDoc, roomDoc, bedDoc] = await Promise.all([
+        db.collection('users').doc(tData.user_id).get(),
+        db.collection('rooms').doc(tData.room_id).get(),
+        db.collection('beds').doc(tData.bed_id).get()
+      ]);
+
+      if (userDoc.exists) {
+        const uData = userDoc.data();
+        tenants.push({
+          id: doc.id,
+          ...tData,
+          name: uData.name,
+          email: uData.email,
+          phone: uData.phone,
+          room_number: roomDoc.exists ? roomDoc.data().room_number : 'N/A',
+          bed_number: bedDoc.exists ? bedDoc.data().bed_number : 'N/A'
+        });
+      }
+    }
     res.json(tenants);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 };
 
-module.exports = { assignTenant, getTenantsByPG };
+const getMyRoomDetails = async (req, res) => {
+  try {
+    const user_id = req.user.uid;
+    console.log(`Fetching room details for user: ${user_id}`);
+
+    // 1. Get tenant record
+    const tenantSnapshot = await db.collection('tenants')
+      .where('user_id', '==', user_id)
+      .limit(1)
+      .get();
+
+    if (tenantSnapshot.empty) {
+      console.log(`No tenant record found for user: ${user_id}`);
+      return res.status(404).json({ error: 'Tenant record not found' });
+    }
+
+    const tenantData = tenantSnapshot.docs[0].data();
+    const { room_id, bed_id, joining_date, rent_amount } = tenantData;
+
+    // 2. Get room details
+    const roomDoc = await db.collection('rooms').doc(room_id).get();
+    const roomData = roomDoc.exists ? roomDoc.data() : {};
+
+    // 3. Get PG details
+    const pg_id = roomData.pg_id;
+    const pgDoc = await db.collection('pgs').doc(pg_id).get();
+    const pgData = pgDoc.exists ? pgDoc.data() : {};
+
+    // 4. Get roommates
+    const roommatesSnapshot = await db.collection('tenants')
+      .where('room_id', '==', room_id)
+      .get();
+
+    const roommates = [];
+    for (const doc of roommatesSnapshot.docs) {
+      const rData = doc.data();
+      if (rData.user_id !== user_id) {
+        const uDoc = await db.collection('users').doc(rData.user_id).get();
+        if (uDoc.exists) {
+          const uData = uDoc.data();
+          roommates.push({
+            name: uData.name,
+            phone: uData.phone,
+            from: uData.from || 'Not Specified',
+            bed_id: rData.bed_id
+          });
+        }
+      }
+    }
+
+    res.json({
+      room_number: roomData.room_number,
+      room_type: roomData.sharing_type + ' Sharing',
+      pg_name: pgData.pg_name,
+      pg_location: pgData.location,
+      pg_facilities: pgData.facilities,
+      bed_number: bed_id,
+      joined_date: joining_date,
+      rent: rent_amount,
+      roommates
+    });
+
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+module.exports = { assignTenant, getTenantsByPG, getMyRoomDetails };

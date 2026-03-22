@@ -24,6 +24,11 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  fs.appendFileSync(logFile, `${req.method} ${req.url}\n`);
+  next();
+});
 fs.appendFileSync(logFile, 'Middleware registered\n');
 
 // Routes
@@ -40,7 +45,7 @@ app.use('/api/payments', require('./routes/payments'));
 fs.appendFileSync(logFile, 'Routes registered\n');
 
 app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to PG Manager API' });
+  res.json({ message: 'Welcome to PG Manager API', version: '1.0.1-fixed' });
 });
 
 // Start Server

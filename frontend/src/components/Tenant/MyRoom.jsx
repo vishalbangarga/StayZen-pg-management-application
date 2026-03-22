@@ -7,23 +7,21 @@ const MyRoom = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // In a real app, we'd fetch the current tenant's room info
-    // For now, using mock data that matches the design
-    setTimeout(() => {
-      setData({
-        room_number: '102',
-        bed_number: '03',
-        pg_name: 'Elite Living PG',
-        room_type: '3 Sharing',
-        joined_date: 'Oct 12, 2025',
-        rent: '8000',
-        roommates: ['Rahul Sharma', 'Amit Kumar']
-      });
-      setLoading(false);
-    }, 500);
+    const fetchDetails = async () => {
+      try {
+        const { data: resData } = await tenantService.getMyRoomDetails();
+        setData(resData);
+      } catch (error) {
+        console.error('Failed to fetch room details:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDetails();
   }, []);
 
   if (loading) return <div style={{ padding: '2rem' }}>Loading Room Details...</div>;
+  if (!data) return <div style={{ padding: '2rem' }}>No room assignment found.</div>;
 
   return (
     <div className="animate-soft">
@@ -55,13 +53,28 @@ const MyRoom = () => {
           </div>
 
           <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>Roommates</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-            {data.roommates.map((name, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px', background: '#fff', padding: '20px', borderRadius: '20px', border: '1px solid var(--border)' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--bg-main)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <User size={20} color="var(--primary)" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+            {data.roommates.map((roommate, i) => (
+              <div key={i} style={{ background: '#fff', padding: '24px', borderRadius: '24px', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '1.25rem' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--bg-main)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <User size={20} color="var(--primary)" />
+                  </div>
+                  <div>
+                    <span style={{ fontWeight: '700', fontSize: '1.1rem', display: 'block' }}>{roommate.name}</span>
+                    <span className="text-muted text-xs">Bed #{roommate.bed_id || 'N/A'}</span>
+                  </div>
                 </div>
-                <span style={{ fontWeight: '700' }}>{name}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                    <span className="text-muted">Phone</span>
+                    <span style={{ fontWeight: '600' }}>{roommate.phone || 'N/A'}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                    <span className="text-muted">From</span>
+                    <span style={{ fontWeight: '600' }}>{roommate.from || 'N/A'}</span>
+                  </div>
+                </div>
               </div>
             ))}
           </div>

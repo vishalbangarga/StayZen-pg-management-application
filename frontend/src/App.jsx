@@ -16,13 +16,19 @@ import './index.css';
 const AppContent = () => {
   const { user } = useAuth();
   const location = useLocation();
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const isDashboard = location.pathname.includes('dashboard');
+
+  // Close sidebar on route change
+  React.useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location.pathname]);
 
   return (
     <div className="app-container">
-      <Navbar />
+      <Navbar onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isDashboard={isDashboard} />
       <div className="layout-body">
-        {user && isDashboard && <Sidebar role={user.role} />}
+        {user && isDashboard && <Sidebar role={user.role} isOpen={isSidebarOpen} />}
         <main className={isDashboard ? 'main-with-sidebar' : 'main-full'}>
           <Routes>
             <Route path="/" element={<Home />} />

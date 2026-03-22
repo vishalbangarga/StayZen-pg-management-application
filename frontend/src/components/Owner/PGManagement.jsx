@@ -9,6 +9,7 @@ const PGManagement = () => {
   const [pgs, setPgs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedPG, setSelectedPG] = useState(null);
 
   useEffect(() => {
     fetchPGs();
@@ -16,13 +17,34 @@ const PGManagement = () => {
 
   const fetchPGs = async () => {
     try {
-      const response = await pgService.getAll();
+      const response = await pgService.getOwnerPGs();
       setPgs(response.data);
     } catch (error) {
       console.error('Error fetching PGs:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEdit = (pg) => {
+    setSelectedPG(pg);
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this property? This action cannot be undone.')) {
+      try {
+        await pgService.delete(id);
+        fetchPGs();
+      } catch (error) {
+        alert(error.response?.data?.error || 'Failed to delete PG');
+      }
+    }
+  };
+
+  const handleOpenAddDialog = () => {
+    setSelectedPG(null);
+    setIsDialogOpen(true);
   };
 
   if (loading) return <div style={{ padding: '2rem' }}>Loading PGs...</div>;
@@ -37,7 +59,7 @@ const PGManagement = () => {
         <button 
           className="btn btn-primary" 
           style={{ borderRadius: '16px', padding: '14px 28px' }}
-          onClick={() => setIsDialogOpen(true)}
+          onClick={handleOpenAddDialog}
         >
           <Plus size={18} /> Add Property
         </button>
@@ -47,6 +69,7 @@ const PGManagement = () => {
         isOpen={isDialogOpen} 
         onClose={() => setIsDialogOpen(false)} 
         onRefresh={fetchPGs} 
+        pg={selectedPG}
       />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '2.5rem' }}>
@@ -59,10 +82,16 @@ const PGManagement = () => {
                   <p className="text-muted text-sm" style={{ fontWeight: '500' }}>{pg.location}</p>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button style={{ padding: '8px', borderRadius: '10px', background: 'var(--bg-main)', border: 'none', cursor: 'pointer', color: 'var(--text-main)' }}>
+                  <button 
+                    style={{ padding: '8px', borderRadius: '10px', background: 'var(--bg-main)', border: 'none', cursor: 'pointer', color: 'var(--text-main)' }}
+                    onClick={() => handleEdit(pg)}
+                  >
                     <Edit size={16} />
                   </button>
-                  <button style={{ padding: '8px', borderRadius: '10px', background: '#fee2e2', border: 'none', cursor: 'pointer', color: '#dc2626' }}>
+                  <button 
+                    style={{ padding: '8px', borderRadius: '10px', background: '#fee2e2', border: 'none', cursor: 'pointer', color: '#dc2626' }}
+                    onClick={() => handleDelete(pg.id)}
+                  >
                     <Trash size={16} />
                   </button>
                 </div>
@@ -73,13 +102,13 @@ const PGManagement = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', marginBottom: '0.5rem' }}>
                     <Bed size={16} /> <span style={{ fontSize: '0.75rem', fontWeight: '850', textTransform: 'uppercase' }}>Rooms</span>
                   </div>
-                  <p style={{ fontSize: '1.25rem', fontWeight: '800' }}>12</p>
+                  <p style={{ fontSize: '1.25rem', fontWeight: '800' }}>{pg.room_count || 0}</p>
                 </div>
                 <div style={{ padding: '1.25rem', background: 'var(--bg-main)', borderRadius: '18px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--success)', marginBottom: '0.5rem' }}>
                     <Users size={16} /> <span style={{ fontSize: '0.75rem', fontWeight: '850', textTransform: 'uppercase' }}>Tenants</span>
                   </div>
-                  <p style={{ fontSize: '1.25rem', fontWeight: '800' }}>34</p>
+                  <p style={{ fontSize: '1.25rem', fontWeight: '800' }}>{pg.tenant_count || 0}</p>
                 </div>
               </div>
 
@@ -106,7 +135,7 @@ const PGManagement = () => {
              <LayoutGrid size={48} style={{ color: 'var(--border)', marginBottom: '1.5rem' }} />
              <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>No properties found</h3>
              <p className="text-muted mb-8">Start by adding your first PG property to manage rooms and tenants.</p>
-             <button className="btn btn-primary">Add Your First PG</button>
+             <button className="btn btn-primary" onClick={handleOpenAddDialog}>Add Your First PG</button>
           </div>
         )}
       </div>

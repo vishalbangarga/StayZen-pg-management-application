@@ -1,24 +1,67 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, CheckCircle2, Clock, Filter, Search } from 'lucide-react';
-import { complaintService } from '../../services/api';
+import { complaintService, pgService } from '../../services/api';
+import { db, onSnapshot, collection, query, where, orderBy } from '../../services/firebase';
+import { useAuth } from '../../context/AuthContext';
 
 const ComplaintManagement = () => {
+  const { user } = useAuth();
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchComplaints = async () => {
+    if (!user?.uid) return;
+
+    const setupListener = async () => {
       try {
-        const { data } = await complaintService.getAll();
-        setComplaints(data);
+        // 1. Get all PG IDs owned by this user
+        // Note: For now we fetch all and filter by owner_id if possible,
+        // or just use the pgIds from the existing PGs.
+        const { data: pgs } = await pgService.getAll();
+        const ownedPgIds = pgs
+          .filter(pg => pg.owner_id === user.uid)
+          .map(pg => pg.id);
+
+        if (ownedPgIds.length === 0) {
+          setComplaints([]);
+          setLoading(false);
+          return;
+        }
+
+        // 2. Setup real-time listener for complaints in these PGs
+        // Note: Firestore 'in' queries are limited to 30 items
+        const q = query(
+          collection(db, 'complaints'),
+          where('pg_id', 'in', ownedPgIds)
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+          const complaintsData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          // Sort on client side to avoid index requirement
+          complaintsData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+          setComplaints(complaintsData);
+          setLoading(false);
+        }, (error) => {
+          console.error('Firestore listener error:', error);
+          setLoading(false);
+        });
+
+        return unsubscribe;
       } catch (error) {
-        console.error('Failed to fetch complaints:', error);
-      } finally {
+        console.error('Failed to setup complaints listener:', error);
         setLoading(false);
       }
     };
-    fetchComplaints();
-  }, []);
+
+    let unsubscribePromise = setupListener();
+    return () => {
+      unsubscribePromise.then(unsubscribe => unsubscribe && unsubscribe());
+    };
+  }, [user?.uid]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -31,9 +74,7 @@ const ComplaintManagement = () => {
   const handleResolve = async (id) => {
     try {
       await complaintService.resolve(id);
-      // Re-fetch
-      const { data } = await complaintService.getAll();
-      setComplaints(data);
+      // No need to re-fetch, onSnapshot will handle it
     } catch (error) {
       console.error('Failed to resolve complaint:', error);
     }
@@ -88,16 +129,25 @@ const ComplaintManagement = () => {
                      {c.status}
                    </div>
                 </td>
-                <td style={{ padding: '1.5rem 2rem', textAlign: 'right' }}>
-                   {c.status !== 'resolved' && (
+                <td style={{ padding: '1.5rem 2rem' }}>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'flex-end' }}>
+                     {c.status !== 'resolved' && (
+                       <button 
+                          onClick={() => handleResolve(c.id)}
+                          className="btn btn-primary" 
+                          style={{ borderRadius: '10px', fontSize: '0.8rem', padding: '8px 16px' }}
+                        >
+                          Resolve
+                        </button>
+                     )}
                      <button 
-                        onClick={() => handleResolve(c.id)}
+                        onClick={() => alert(`Reporting issue: ${c.description}\nOwner will be notified.`)}
                         className="btn btn-outline" 
-                        style={{ borderRadius: '10px', fontSize: '0.8rem', padding: '8px 16px' }}
+                        style={{ borderRadius: '10px', fontSize: '0.8rem', padding: '8px 16px', color: 'var(--error)', borderColor: 'var(--error)' }}
                       >
-                        Resolve
+                        Report
                       </button>
-                   )}
+                   </div>
                 </td>
               </tr>
             ))}

@@ -72,12 +72,12 @@ const TenantManagement = () => {
                   </div>
                 </td>
                 <td style={{ padding: '1.25rem 2rem' }}>
-                   <div style={{ fontWeight: '600' }}>Room {tenant.room_id || '101'}</div>
-                   <div className="text-muted text-xs">Bed #{tenant.bed_id || '01'}</div>
+                   <div style={{ fontWeight: '600' }}>Room {tenant.room_number || 'N/A'}</div>
+                   <div className="text-muted text-xs">Bed #{tenant.bed_number || 'N/A'}</div>
                 </td>
                 <td style={{ padding: '1.25rem 2rem' }}>
                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}>
-                     <Calendar size={14} className="text-muted" /> Feb 12, 2025
+                     <Calendar size={14} className="text-muted" /> {tenant.joining_date ? new Date(tenant.joining_date).toLocaleDateString() : 'N/A'}
                    </div>
                 </td>
                 <td style={{ padding: '1.25rem 2rem' }}>

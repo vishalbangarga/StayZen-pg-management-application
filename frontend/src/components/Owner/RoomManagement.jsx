@@ -36,7 +36,13 @@ const RoomManagement = () => {
   const handleAddRoom = async (e) => {
     e.preventDefault();
     try {
-      await roomService.create({ ...newRoom, pg_id: pgId });
+      // room_type is used as total_beds if not specified
+      await roomService.create({ 
+        ...newRoom, 
+        pg_id: pgId, 
+        total_beds: parseInt(newRoom.room_type),
+        deposit_amount: parseInt(newRoom.price_per_bed) * 2 // Default deposit
+      });
       setIsAdding(false);
       setNewRoom({ room_number: '', room_type: '2', price_per_bed: '' });
       fetchData();
@@ -112,7 +118,7 @@ const RoomManagement = () => {
           <div key={room.id} className="glass" style={{ padding: '2rem', borderRadius: '28px', background: '#fff' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: '800' }}>Room {room.room_number}</h3>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: '800' }}>Room {room.room_number || 'N/A'}</h3>
                 <p className="text-muted text-xs font-700 uppercase tracking-wider">{room.room_type} Sharing</p>
               </div>
               <button style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer' }}>

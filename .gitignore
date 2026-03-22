@@ -27,3 +27,12 @@ out/
 # Other
 server-debug.log
 test-output.txt
+*.log
+debug_db_output.txt
+inspectData.js
+checkDB.js
+diagnoseBookings.js
+dummy.js
+findUsers.js
+checkComplaints.js
+debugDB.js

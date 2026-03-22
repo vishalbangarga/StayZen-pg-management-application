@@ -2,7 +2,7 @@ const { db } = require('../config/firebase');
 
 const createRoom = async (req, res) => {
   try {
-    const { pg_id, room_type, total_beds, price_per_bed, deposit_amount } = req.body;
+    const { pg_id, room_number, room_type, total_beds, price_per_bed, deposit_amount } = req.body;
     
     // Check if PG exists and user is owner
     const pgDoc = await db.collection('pgs').doc(pg_id).get();
@@ -12,6 +12,7 @@ const createRoom = async (req, res) => {
 
     const roomRef = await db.collection('rooms').add({
       pg_id,
+      room_number,
       room_type,
       total_beds,
       price_per_bed,

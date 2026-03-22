@@ -30,6 +30,9 @@ export const pgService = {
   getAll: () => api.get('/pg'),
   getById: (id) => api.get(`/pg/${id}`),
   create: (data) => api.post('/pg', data),
+  update: (id, data) => api.put(`/pg/${id}`, data),
+  delete: (id) => api.delete(`/pg/${id}`),
+  getOwnerPGs: () => api.get('/pg/owner'),
 };
 
 export const roomService = {
@@ -40,12 +43,13 @@ export const roomService = {
 
 export const tenantService = {
   getByPG: (pgId) => api.get(`/tenants/pg/${pgId}`),
-  getMyRoom: () => api.get('/tenants/me/room'),
+  getMyRoomDetails: () => api.get('/tenants/my-room'),
 };
 
 export const bookingService = {
   request: (data) => api.post('/bookings/request', data),
   getOwnerBookings: () => api.get('/bookings/owner'),
+  getMyBookings: () => api.get('/bookings/my-bookings'),
   updateStatus: (id, status) => api.put(`/bookings/${id}/status`, { status }),
 };
 
@@ -64,7 +68,7 @@ export const complaintService = {
   getAll: () => api.get('/complaints'),
   getByUser: () => api.get('/complaints/me'),
   create: (data) => api.post('/complaints', data),
-  resolve: (id) => api.put(`/complaints/${id}/resolve`),
+  resolve: (id) => api.put(`/complaints/${id}/resolve`, { status: 'resolved' }),
 };
 
 export const reviewService = {

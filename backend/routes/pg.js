@@ -4,6 +4,7 @@ const { createPG, getAllPGs, getPGById, updatePG, deletePG } = require('../contr
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
 
 router.get('/', getAllPGs);
+router.get('/owner', verifyToken, authorizeRoles('owner'), getAllPGs); // Reusing getAllPGs but will update it to handle owner filter
 router.get('/:id', getPGById);
 router.post('/', verifyToken, authorizeRoles('owner'), createPG);
 router.put('/:id', verifyToken, authorizeRoles('owner'), updatePG);

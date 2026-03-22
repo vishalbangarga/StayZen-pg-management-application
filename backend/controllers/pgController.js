@@ -26,15 +26,39 @@ const getAllPGs = async (req, res) => {
     const { location, minPrice, maxPrice, sharingType } = req.query;
     let query = db.collection('pgs');
 
+    // If req.user exists and we want owner-only PGs (implied by the route or a flag)
+    // Here I'll check if the owner is logged in and filter by their ID
+    if (req.user && req.user.role === 'owner') {
+      query = query.where('owner_id', '==', req.user.uid);
+    }
+
     if (location) {
       query = query.where('location', '==', location);
     }
 
     const pgsSnapshot = await query.get();
-    let pgs = pgsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    let pgs = [];
+    
+    for (const doc of pgsSnapshot.docs) {
+      const pgData = doc.data();
+      const roomsSnapshot = await db.collection('rooms').where('pg_id', '==', doc.id).get();
+      const roomIds = roomsSnapshot.docs.map(room => room.id);
+      
+      let tenantCount = 0;
+      if (roomIds.length > 0) {
+        const tenantsSnapshot = await db.collection('tenants').where('room_id', 'in', roomIds.slice(0, 10)).get();
+        tenantCount = tenantsSnapshot.size;
+      }
 
-    // Client-side filtering for price and sharing if needed, 
-    // or handle more complex Firestore queries (requires indexes)
+      pgs.push({
+        id: doc.id,
+        ...pgData,
+        room_count: roomsSnapshot.size,
+        tenant_count: tenantCount
+      });
+    }
+
+    // Client-side filtering...
     if (minPrice) pgs = pgs.filter(pg => pg.price >= Number(minPrice));
     if (maxPrice) pgs = pgs.filter(pg => pg.price <= Number(maxPrice));
     if (sharingType) pgs = pgs.filter(pg => pg.sharing_types && pg.sharing_types.includes(Number(sharingType)));

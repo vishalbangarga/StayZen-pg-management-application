@@ -1,25 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, Send, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { complaintService } from '../../services/api';
+import { db, onSnapshot, collection, query, where, orderBy } from '../../services/firebase';
+import { useAuth } from '../../context/AuthContext';
 
 const Support = () => {
+  const { user } = useAuth();
   const [complaints, setComplaints] = useState([]);
   const [newComplaint, setNewComplaint] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchComplaints = async () => {
-      try {
-        const { data } = await complaintService.getByUser();
-        setComplaints(data);
-      } catch (error) {
-        console.error('Failed to fetch complaints:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchComplaints();
-  }, []);
+    if (!user?.uid) return;
+
+    const q = query(
+      collection(db, 'complaints'),
+      where('tenant_id', '==', user.uid)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const complaintsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      // Sort on client side to avoid index requirement
+      complaintsData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      
+      setComplaints(complaintsData);
+      setLoading(false);
+    }, (error) => {
+      console.error('Firestore listener error:', error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user?.uid]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,9 +46,7 @@ const Support = () => {
         type: 'General'
       });
       setNewComplaint('');
-      // Re-fetch complaints
-      const { data } = await complaintService.getByUser();
-      setComplaints(data);
+      // No need to manual fetch, onSnapshot will handle it
     } catch (error) {
       console.error('Failed to submit complaint:', error);
     }

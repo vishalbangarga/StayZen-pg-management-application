@@ -1,9 +1,9 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Home as HomeIcon, LogIn, UserPlus, LogOut, User, Sun, Moon } from 'lucide-react';
+import { Home as HomeIcon, LogIn, UserPlus, LogOut, User, Sun, Moon, Menu as MenuIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const Navbar = () => {
+const Navbar = ({ onToggleSidebar, isDashboard }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isDark, setIsDark] = React.useState(() => {
@@ -26,10 +26,10 @@ const Navbar = () => {
 
   return (
     <nav style={{
-      padding: '1rem 4rem',
+      padding: '1rem 2rem',
       position: 'sticky',
       top: 0,
-      zIndex: 100,
+      zIndex: 1100,
       background: 'var(--bg-card)',
       backdropFilter: 'blur(12px)',
       borderBottom: '1px solid var(--border)',
@@ -37,17 +37,28 @@ const Navbar = () => {
       justifyContent: 'space-between',
       alignItems: 'center',
     }}>
-      <Link to="/" style={{ 
-        fontSize: '1.5rem', 
-        fontWeight: '800', 
-        color: 'var(--primary)', 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '8px',
-        letterSpacing: '-0.04em'
-      }}>
-        PG Manager
-      </Link>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        {isDashboard && (
+          <button 
+            onClick={onToggleSidebar}
+            className="mobile-only"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-main)', padding: '4px' }}
+          >
+            <MenuIcon size={24} />
+          </button>
+        )}
+        <Link to="/" style={{ 
+          fontSize: '1.25rem', 
+          fontWeight: '800', 
+          color: 'var(--primary)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '8px',
+          letterSpacing: '-0.04em'
+        }}>
+          PG Manager
+        </Link>
+      </div>
       <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
         <button 
           onClick={toggleTheme}

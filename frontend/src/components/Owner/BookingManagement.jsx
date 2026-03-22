@@ -58,14 +58,14 @@ const BookingManagement = () => {
                       <User size={20} />
                     </div>
                     <div>
-                      <div style={{ fontWeight: '700' }}>User ID: {b.user_id.substring(0, 8)}...</div>
-                      <div className="text-muted text-xs">Request on {new Date(b.created_at).toLocaleDateString()}</div>
+                      <div style={{ fontWeight: '700' }}>{b.user_name || `User ID: ${b.user_id.substring(0, 8)}...`}</div>
+                      <div className="text-muted text-xs">Requested on {new Date(b.created_at).toLocaleDateString()}</div>
                     </div>
                   </div>
                 </td>
                 <td style={{ padding: '1.5rem 2rem' }}>
                    <div style={{ fontWeight: '600', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                     <Home size={14} className="text-muted" /> PG ID: {b.pg_id.substring(0, 8)}...
+                     <Home size={14} className="text-muted" /> {b.pg_name || `PG ID: ${b.pg_id.substring(0, 8)}...`}
                    </div>
                    <div className="text-muted text-sm">{b.room_type} Sharing Room</div>
                 </td>
